@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -107,7 +108,7 @@ def convert_month(value):
     if pd.isna(value):
         return np.nan
 
-    # If already numeric
+    # Numeric month
     try:
 
         number = float(value)
@@ -119,10 +120,7 @@ def convert_month(value):
 
         pass
 
-
-    # Convert text month names
-    month_text = str(value).strip().lower()
-
+    # Text month
     month_map = {
 
         "january": 1,
@@ -163,7 +161,7 @@ def convert_month(value):
     }
 
     return month_map.get(
-        month_text,
+        str(value).strip().lower(),
         np.nan
     )
 
@@ -174,11 +172,10 @@ df["Month"] = df["Month"].apply(
 
 
 # =====================================================
-# CONVERT NUMERIC DATA
+# CONVERT NUMERIC COLUMNS
 # =====================================================
 
 numeric_columns = [
-
     "Latitude",
     "Longitude",
     "Year",
@@ -188,7 +185,6 @@ numeric_columns = [
     "NDWI",
     "Elevation (m)",
     "LST (°C)"
-
 ]
 
 for column in numeric_columns:
@@ -214,7 +210,7 @@ df["Date"] = pd.to_datetime(
 
 
 # =====================================================
-# SORT DATA
+# SORT DATA BY CITY AND DATE
 # =====================================================
 
 df = df.sort_values(
@@ -238,7 +234,6 @@ df["Future_NDVI"] = (
 # =====================================================
 
 features = [
-
     "Latitude",
     "Longitude",
     "NDBI",
@@ -246,12 +241,11 @@ features = [
     "Elevation (m)",
     "LST (°C)",
     "NDVI"
-
 ]
 
 
 # =====================================================
-# CREATE MODEL DATA
+# MODEL DATA
 # =====================================================
 
 df_model = df.dropna(
@@ -260,7 +254,7 @@ df_model = df.dropna(
 
 
 # =====================================================
-# FILL MISSING FEATURE VALUES
+# FILL MISSING FEATURES
 # =====================================================
 
 for column in features:
@@ -270,9 +264,7 @@ for column in features:
         errors="coerce"
     )
 
-    median_value = (
-        df_model[column].median()
-    )
+    median_value = df_model[column].median()
 
     if pd.isna(median_value):
 
@@ -285,19 +277,14 @@ for column in features:
 
 
 # =====================================================
-# CHECK MODEL DATA
+# CHECK TRAINING DATA
 # =====================================================
 
 if len(df_model) < 10:
 
     st.error(
-        f"""
-Only {len(df_model)} valid records are available
-for training.
-
-Please check that each city has multiple NDVI
-records for different months.
-"""
+        f"Only {len(df_model)} valid records are "
+        "available for training."
     )
 
     st.write(
@@ -328,7 +315,7 @@ y = df_model["Future_NDVI"]
 
 
 # =====================================================
-# TRAIN / TEST SPLIT
+# TIME-ORDERED TRAIN / TEST SPLIT
 # =====================================================
 
 split_point = int(
@@ -347,7 +334,7 @@ y_test = y.iloc[split_point:]
 
 
 # =====================================================
-# RANDOM FOREST
+# RANDOM FOREST MODEL
 # =====================================================
 
 model = RandomForestRegressor(
@@ -364,7 +351,7 @@ model.fit(
 
 
 # =====================================================
-# PREDICTION
+# TEST PREDICTION
 # =====================================================
 
 y_pred = model.predict(
@@ -395,37 +382,37 @@ r2 = r2_score(
 
 
 # =====================================================
-# FORECAST DATA
+# PREDICT FOR ALL CITY RECORDS
 # =====================================================
 
-forecast = X_test.copy()
+all_predictions = model.predict(
+    df_model[features]
+)
 
 
-forecast["City"] = df_model.loc[
-    X_test.index,
-    "City"
-].values
+# =====================================================
+# CREATE FORECAST TABLE
+# =====================================================
 
-
-forecast["Year"] = df_model.loc[
-    X_test.index,
-    "Year"
-].values
-
-
-forecast["Month"] = df_model.loc[
-    X_test.index,
-    "Month"
-].values
+forecast = df_model[
+    [
+        "City",
+        "Year",
+        "Month",
+        "Latitude",
+        "Longitude",
+        "NDVI"
+    ]
+].copy()
 
 
 forecast["Actual_Future_NDVI"] = (
-    y_test.values
+    df_model["Future_NDVI"].values
 )
 
 
 forecast["Predicted_Future_NDVI"] = (
-    y_pred
+    all_predictions
 )
 
 
@@ -486,9 +473,7 @@ decreasing = (
 # SUMMARY CARDS
 # =====================================================
 
-st.subheader(
-    "📊 Forecast Summary"
-)
+st.subheader("📊 Forecast Summary")
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -514,14 +499,12 @@ col4.metric(
 
 
 # =====================================================
-# LOCATION FORECAST
+# CITY SELECTION
 # =====================================================
 
 st.divider()
 
-st.subheader(
-    "📍 Location Forecast"
-)
+st.subheader("📍 Location Forecast")
 
 
 cities = sorted(
@@ -538,11 +521,11 @@ selected_city = st.selectbox(
 
 
 # =====================================================
-# CITY DATA
+# FILTER SELECTED CITY
 # =====================================================
 
-city_data = df[
-    df["City"]
+city_forecast = forecast[
+    forecast["City"]
     .astype(str)
     .str.strip()
     .str.lower()
@@ -554,112 +537,26 @@ city_data = df[
 
 
 # =====================================================
-# CITY PREDICTION
+# CITY FORECAST
 # =====================================================
 
-if len(city_data) > 0:
+if len(city_forecast) > 0:
 
-    city_data = city_data.sort_values(
-        "Date",
+    # Sort by date
+    city_forecast = city_forecast.sort_values(
+        ["Year", "Month"],
         na_position="last"
     )
 
-    latest = city_data.iloc[-1]
-
-
-    # -------------------------------------------------
-    # PREPARE INPUT
-    # -------------------------------------------------
-
-    input_data = pd.DataFrame({
-
-        "Latitude": [
-            latest["Latitude"]
-        ],
-
-        "Longitude": [
-            latest["Longitude"]
-        ],
-
-        "NDBI": [
-            latest["NDBI"]
-        ],
-
-        "NDWI": [
-            latest["NDWI"]
-        ],
-
-        "Elevation (m)": [
-            latest["Elevation (m)"]
-        ],
-
-        "LST (°C)": [
-            latest["LST (°C)"]
-        ],
-
-        "NDVI": [
-            latest["NDVI"]
-        ]
-
-    })
-
-
-    # Fill missing values
-    for column in features:
-
-        median_value = (
-            df_model[column].median()
-        )
-
-        if pd.isna(median_value):
-
-            median_value = 0
-
-        input_data[column] = (
-            pd.to_numeric(
-                input_data[column],
-                errors="coerce"
-            )
-            .fillna(median_value)
-        )
-
-
-    # -------------------------------------------------
-    # PREDICTION
-    # -------------------------------------------------
-
-    predicted_ndvi = model.predict(
-        input_data
-    )[0]
-
-
-    current_ndvi = latest["NDVI"]
-
-
-    if pd.isna(current_ndvi):
-
-        current_ndvi = input_data[
-            "NDVI"
-        ].iloc[0]
-
-
-    ndvi_change = (
-        predicted_ndvi
-        - current_ndvi
-    )
-
-
-    vegetation_status = classify(
-        ndvi_change
-    )
+    latest = city_forecast.iloc[-1]
 
 
     # =================================================
-    # LOCATION DETAILS
+    # CITY METRICS
     # =================================================
 
     st.write(
-        f"**City:** {selected_city}"
+        f"**Selected City:** {selected_city}"
     )
 
 
@@ -691,17 +588,13 @@ if len(city_data) > 0:
         )
 
 
-    # =================================================
-    # METRICS
-    # =================================================
-
     col1, col2, col3 = st.columns(3)
 
 
     col1.metric(
         "Current NDVI",
         round(
-            current_ndvi,
+            latest["NDVI"],
             4
         )
     )
@@ -710,7 +603,7 @@ if len(city_data) > 0:
     col2.metric(
         "Predicted Future NDVI",
         round(
-            predicted_ndvi,
+            latest["Predicted_Future_NDVI"],
             4
         )
     )
@@ -719,23 +612,28 @@ if len(city_data) > 0:
     col3.metric(
         "NDVI Change",
         round(
-            ndvi_change,
+            latest["NDVI_Change"],
             4
         )
     )
 
 
     # =================================================
-    # STATUS
+    # VEGETATION STATUS
     # =================================================
 
-    if vegetation_status == "Increasing":
+    status = latest[
+        "Vegetation_Status"
+    ]
+
+
+    if status == "Increasing":
 
         st.success(
             "🌱 Vegetation Status: Increasing"
         )
 
-    elif vegetation_status == "Decreasing":
+    elif status == "Decreasing":
 
         st.error(
             "⚠️ Vegetation Status: Decreasing"
@@ -751,7 +649,91 @@ if len(city_data) > 0:
 else:
 
     st.warning(
-        "No data found for this city."
+        "No forecast available for this city."
+    )
+
+
+# =====================================================
+# CITY-SPECIFIC FORECAST TABLE
+# =====================================================
+
+st.divider()
+
+st.subheader(
+    f"📋 Forecast Results - {selected_city}"
+)
+
+
+display_columns = [
+
+    "City",
+    "Year",
+    "Month",
+    "Latitude",
+    "Longitude",
+    "NDVI",
+    "Actual_Future_NDVI",
+    "Predicted_Future_NDVI",
+    "NDVI_Change",
+    "Vegetation_Status"
+
+]
+
+
+if len(city_forecast) > 0:
+
+    table = city_forecast[
+        display_columns
+    ].copy()
+
+
+    # Year
+    table["Year"] = table["Year"].apply(
+        lambda x:
+        int(x)
+        if pd.notna(x)
+        else "N/A"
+    )
+
+
+    # Month
+    table["Month"] = table["Month"].apply(
+        lambda x:
+        int(x)
+        if pd.notna(x)
+        else "N/A"
+    )
+
+
+    st.dataframe(
+        table,
+        use_container_width=True
+    )
+
+
+else:
+
+    st.info(
+        f"No forecast results available "
+        f"for {selected_city}."
+    )
+
+
+# =====================================================
+# DOWNLOAD SELECTED CITY
+# =====================================================
+
+if len(city_forecast) > 0:
+
+    city_csv = city_forecast.to_csv(
+        index=False
+    )
+
+    st.download_button(
+        "⬇️ Download Selected City Forecast",
+        city_csv,
+        f"{selected_city}_vegetation_forecast.csv",
+        "text/csv"
     )
 
 
@@ -838,7 +820,7 @@ st.pyplot(fig1)
 
 
 # =====================================================
-# MAP
+# GEOGRAPHICAL MAP
 # =====================================================
 
 st.divider()
@@ -895,24 +877,85 @@ st.pyplot(fig2)
 
 
 # =====================================================
+# SELECTED CITY NDVI GRAPH
+# =====================================================
+
+st.divider()
+
+st.subheader(
+    f"📈 NDVI Forecast for {selected_city}"
+)
+
+
+if len(city_forecast) > 0:
+
+    graph_data = city_forecast.sort_values(
+        ["Year", "Month"],
+        na_position="last"
+    )
+
+
+    fig4, ax4 = plt.subplots(
+        figsize=(12, 5)
+    )
+
+
+    ax4.plot(
+        graph_data["NDVI"].values,
+        label="Current NDVI",
+        marker="o"
+    )
+
+
+    ax4.plot(
+        graph_data[
+            "Predicted_Future_NDVI"
+        ].values,
+        label="Predicted Future NDVI",
+        marker="o"
+    )
+
+
+    ax4.set_xlabel(
+        "Observation"
+    )
+
+    ax4.set_ylabel(
+        "NDVI"
+    )
+
+    ax4.set_title(
+        f"Current vs Predicted NDVI - "
+        f"{selected_city}"
+    )
+
+    ax4.legend()
+
+    ax4.grid(True)
+
+
+    st.pyplot(fig4)
+
+
+# =====================================================
 # ACTUAL VS PREDICTED
 # =====================================================
 
 st.divider()
 
 st.subheader(
-    "📈 Actual vs Predicted Future NDVI"
-)
-
-
-fig3, ax3 = plt.subplots(
-    figsize=(12, 5)
+    "📊 Actual vs Predicted Future NDVI"
 )
 
 
 number_to_plot = min(
     100,
     len(y_test)
+)
+
+
+fig3, ax3 = plt.subplots(
+    figsize=(12, 5)
 )
 
 
@@ -946,78 +989,6 @@ ax3.grid(True)
 
 
 st.pyplot(fig3)
-
-
-# =====================================================
-# FORECAST TABLE
-# =====================================================
-
-st.divider()
-
-st.subheader(
-    "📋 Forecast Results"
-)
-
-
-display_columns = [
-
-    "City",
-    "Year",
-    "Month",
-    "Latitude",
-    "Longitude",
-    "NDVI",
-    "Predicted_Future_NDVI",
-    "NDVI_Change",
-    "Vegetation_Status"
-
-]
-
-
-table = forecast[
-    display_columns
-].copy()
-
-
-# Make Year integer where available
-table["Year"] = table["Year"].apply(
-    lambda x:
-    int(x)
-    if pd.notna(x)
-    else "N/A"
-)
-
-
-# Make Month integer where available
-table["Month"] = table["Month"].apply(
-    lambda x:
-    int(x)
-    if pd.notna(x)
-    else "N/A"
-)
-
-
-st.dataframe(
-    table,
-    use_container_width=True
-)
-
-
-# =====================================================
-# DOWNLOAD
-# =====================================================
-
-csv = forecast.to_csv(
-    index=False
-)
-
-
-st.download_button(
-    "⬇️ Download Forecast Results",
-    csv,
-    "vegetation_forecast_results.csv",
-    "text/csv"
-)
 
 
 # =====================================================
