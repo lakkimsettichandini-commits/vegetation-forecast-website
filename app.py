@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -30,6 +29,36 @@ st.write(
     "conditions using geospatial and environmental data."
 )
 
+
+# =====================================================
+# CREATORS
+# =====================================================
+
+st.markdown(
+    """
+    <div style="
+        text-align: center;
+        padding: 18px;
+        margin: 15px 0 25px 0;
+        border-radius: 12px;
+        border: 1px solid #dddddd;
+    ">
+        <h3>👩‍💻 Developed By</h3>
+
+        <p style="font-size: 18px;">
+            <b>G. Vatsyalya</b> &nbsp; | &nbsp;
+            <b>G. Geetha Sri</b> &nbsp; | &nbsp;
+            <b>L. Chandini</b>
+        </p>
+
+        <p>
+            🌱 AI-Based Geospatial Vegetation Forecasting Project
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.divider()
 
 
@@ -39,7 +68,6 @@ st.divider()
 
 @st.cache_data
 def load_data():
-
     return pd.read_csv("vegetation_data.csv.csv")
 
 
@@ -108,7 +136,6 @@ def convert_month(value):
     if pd.isna(value):
         return np.nan
 
-    # Numeric month
     try:
 
         number = float(value)
@@ -120,7 +147,6 @@ def convert_month(value):
 
         pass
 
-    # Text month
     month_map = {
 
         "january": 1,
@@ -210,7 +236,7 @@ df["Date"] = pd.to_datetime(
 
 
 # =====================================================
-# SORT DATA BY CITY AND DATE
+# SORT DATA
 # =====================================================
 
 df = df.sort_values(
@@ -267,7 +293,6 @@ for column in features:
     median_value = df_model[column].median()
 
     if pd.isna(median_value):
-
         median_value = 0
 
     df_model[column] = (
@@ -315,21 +340,17 @@ y = df_model["Future_NDVI"]
 
 
 # =====================================================
-# TIME-ORDERED TRAIN / TEST SPLIT
+# TRAIN / TEST SPLIT
 # =====================================================
 
 split_point = int(
     len(df_model) * 0.80
 )
 
-
 X_train = X.iloc[:split_point]
-
 X_test = X.iloc[split_point:]
 
-
 y_train = y.iloc[:split_point]
-
 y_test = y.iloc[split_point:]
 
 
@@ -342,7 +363,6 @@ model = RandomForestRegressor(
     random_state=42,
     n_jobs=-1
 )
-
 
 model.fit(
     X_train,
@@ -382,7 +402,7 @@ r2 = r2_score(
 
 
 # =====================================================
-# PREDICT FOR ALL CITY RECORDS
+# PREDICT ALL CITY RECORDS
 # =====================================================
 
 all_predictions = model.predict(
@@ -429,15 +449,12 @@ forecast["NDVI_Change"] = (
 def classify(change):
 
     if change > 0.05:
-
         return "Increasing"
 
     elif change < -0.05:
-
         return "Decreasing"
 
     else:
-
         return "Stable"
 
 
@@ -506,13 +523,11 @@ st.divider()
 
 st.subheader("📍 Location Forecast")
 
-
 cities = sorted(
     df["City"]
     .dropna()
     .unique()
 )
-
 
 selected_city = st.selectbox(
     "Select a City",
@@ -542,7 +557,6 @@ city_forecast = forecast[
 
 if len(city_forecast) > 0:
 
-    # Sort by date
     city_forecast = city_forecast.sort_values(
         ["Year", "Month"],
         na_position="last"
@@ -550,15 +564,9 @@ if len(city_forecast) > 0:
 
     latest = city_forecast.iloc[-1]
 
-
-    # =================================================
-    # CITY METRICS
-    # =================================================
-
     st.write(
         f"**Selected City:** {selected_city}"
     )
-
 
     if pd.notna(latest["Year"]):
 
@@ -573,7 +581,6 @@ if len(city_forecast) > 0:
             "**Current Year:** Not available"
         )
 
-
     if pd.notna(latest["Month"]):
 
         st.write(
@@ -587,9 +594,7 @@ if len(city_forecast) > 0:
             "**Current Month:** Not available"
         )
 
-
     col1, col2, col3 = st.columns(3)
-
 
     col1.metric(
         "Current NDVI",
@@ -599,7 +604,6 @@ if len(city_forecast) > 0:
         )
     )
 
-
     col2.metric(
         "Predicted Future NDVI",
         round(
@@ -607,7 +611,6 @@ if len(city_forecast) > 0:
             4
         )
     )
-
 
     col3.metric(
         "NDVI Change",
@@ -617,15 +620,9 @@ if len(city_forecast) > 0:
         )
     )
 
-
-    # =================================================
-    # VEGETATION STATUS
-    # =================================================
-
     status = latest[
         "Vegetation_Status"
     ]
-
 
     if status == "Increasing":
 
@@ -644,7 +641,6 @@ if len(city_forecast) > 0:
         st.info(
             "🌿 Vegetation Status: Stable"
         )
-
 
 else:
 
@@ -665,7 +661,6 @@ st.subheader(
 
 
 display_columns = [
-
     "City",
     "Year",
     "Month",
@@ -676,7 +671,6 @@ display_columns = [
     "Predicted_Future_NDVI",
     "NDVI_Change",
     "Vegetation_Status"
-
 ]
 
 
@@ -686,8 +680,6 @@ if len(city_forecast) > 0:
         display_columns
     ].copy()
 
-
-    # Year
     table["Year"] = table["Year"].apply(
         lambda x:
         int(x)
@@ -695,8 +687,6 @@ if len(city_forecast) > 0:
         else "N/A"
     )
 
-
-    # Month
     table["Month"] = table["Month"].apply(
         lambda x:
         int(x)
@@ -704,12 +694,10 @@ if len(city_forecast) > 0:
         else "N/A"
     )
 
-
     st.dataframe(
         table,
         use_container_width=True
     )
-
 
 else:
 
@@ -747,9 +735,7 @@ st.subheader(
     "🤖 AI Model Performance"
 )
 
-
 col1, col2, col3 = st.columns(3)
-
 
 col1.metric(
     "MAE",
@@ -777,13 +763,11 @@ st.subheader(
     "🌿 Vegetation Forecast"
 )
 
-
 labels = [
     "Increasing",
     "Stable",
     "Decreasing"
 ]
-
 
 values = [
     increasing,
@@ -791,17 +775,14 @@ values = [
     decreasing
 ]
 
-
 fig1, ax1 = plt.subplots(
     figsize=(8, 5)
 )
-
 
 ax1.bar(
     labels,
     values
 )
-
 
 ax1.set_xlabel(
     "Vegetation Status"
@@ -814,7 +795,6 @@ ax1.set_ylabel(
 ax1.set_title(
     "Future Vegetation Forecast"
 )
-
 
 st.pyplot(fig1)
 
@@ -829,11 +809,9 @@ st.subheader(
     "🗺️ Geospatial Forecast Map"
 )
 
-
 fig2, ax2 = plt.subplots(
     figsize=(10, 7)
 )
-
 
 for status in [
     "Increasing",
@@ -846,7 +824,6 @@ for status in [
         == status
     ]
 
-
     ax2.scatter(
         subset["Longitude"],
         subset["Latitude"],
@@ -854,7 +831,6 @@ for status in [
         s=40,
         alpha=0.7
     )
-
 
 ax2.set_xlabel(
     "Longitude"
@@ -872,7 +848,6 @@ ax2.legend()
 
 ax2.grid(True)
 
-
 st.pyplot(fig2)
 
 
@@ -886,7 +861,6 @@ st.subheader(
     f"📈 NDVI Forecast for {selected_city}"
 )
 
-
 if len(city_forecast) > 0:
 
     graph_data = city_forecast.sort_values(
@@ -894,18 +868,15 @@ if len(city_forecast) > 0:
         na_position="last"
     )
 
-
     fig4, ax4 = plt.subplots(
         figsize=(12, 5)
     )
-
 
     ax4.plot(
         graph_data["NDVI"].values,
         label="Current NDVI",
         marker="o"
     )
-
 
     ax4.plot(
         graph_data[
@@ -914,7 +885,6 @@ if len(city_forecast) > 0:
         label="Predicted Future NDVI",
         marker="o"
     )
-
 
     ax4.set_xlabel(
         "Observation"
@@ -933,7 +903,6 @@ if len(city_forecast) > 0:
 
     ax4.grid(True)
 
-
     st.pyplot(fig4)
 
 
@@ -947,29 +916,24 @@ st.subheader(
     "📊 Actual vs Predicted Future NDVI"
 )
 
-
 number_to_plot = min(
     100,
     len(y_test)
 )
 
-
 fig3, ax3 = plt.subplots(
     figsize=(12, 5)
 )
-
 
 ax3.plot(
     y_test.iloc[:number_to_plot].values,
     label="Actual"
 )
 
-
 ax3.plot(
     y_pred[:number_to_plot],
     label="Predicted"
 )
-
 
 ax3.set_xlabel(
     "Test Sample"
@@ -987,8 +951,39 @@ ax3.legend()
 
 ax3.grid(True)
 
-
 st.pyplot(fig3)
+
+
+# =====================================================
+# FOOTER / CREATORS
+# =====================================================
+
+st.divider()
+
+st.markdown(
+    """
+    <div style="
+        text-align: center;
+        padding: 20px;
+        margin-top: 20px;
+    ">
+
+        <h3>🌱 Project Developed By</h3>
+
+        <p style="font-size: 17px;">
+            <b>G. Vatsyalya</b> &nbsp; • &nbsp;
+            <b>G. Geetha Sri</b> &nbsp; • &nbsp;
+            <b>L. Chandini</b>
+        </p>
+
+        <p>
+            AI-Based Geospatial Vegetation Forecasting
+        </p>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # =====================================================
@@ -998,3 +993,4 @@ st.pyplot(fig3)
 st.success(
     "🌱 AI Vegetation Forecast completed successfully!"
 )
+
