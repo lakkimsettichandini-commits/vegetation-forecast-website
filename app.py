@@ -31,32 +31,17 @@ st.write(
 
 
 # =====================================================
-# CREATORS
+# PROJECT DEVELOPED BY
 # =====================================================
 
-st.markdown(
-    """
-    <div style="
-        text-align: center;
-        padding: 18px;
-        margin: 15px 0 25px 0;
-        border-radius: 12px;
-        border: 1px solid #dddddd;
-    ">
-        <h3>👩‍💻 Developed By</h3>
+st.subheader("👩‍💻 Project Developed By")
 
-        <p style="font-size: 18px;">
-            <b>G. Vatsyalya</b> &nbsp; | &nbsp;
-            <b>G. Geetha Sri</b> &nbsp; | &nbsp;
-            <b>L. Chandini</b>
-        </p>
+st.write("**G. Vatsyalya**")
+st.write("**G. Geetha Sri**")
+st.write("**L. Chandini**")
 
-        <p>
-            🌱 AI-Based Geospatial Vegetation Forecasting Project
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True
+st.write(
+    "🌱 AI-Based Geospatial Vegetation Forecasting Project"
 )
 
 st.divider()
@@ -148,40 +133,28 @@ def convert_month(value):
         pass
 
     month_map = {
-
         "january": 1,
         "jan": 1,
-
         "february": 2,
         "feb": 2,
-
         "march": 3,
         "mar": 3,
-
         "april": 4,
         "apr": 4,
-
         "may": 5,
-
         "june": 6,
         "jun": 6,
-
         "july": 7,
         "jul": 7,
-
         "august": 8,
         "aug": 8,
-
         "september": 9,
         "sep": 9,
         "sept": 9,
-
         "october": 10,
         "oct": 10,
-
         "november": 11,
         "nov": 11,
-
         "december": 12,
         "dec": 12
     }
@@ -402,7 +375,7 @@ r2 = r2_score(
 
 
 # =====================================================
-# PREDICT ALL CITY RECORDS
+# PREDICT ALL RECORDS
 # =====================================================
 
 all_predictions = model.predict(
@@ -658,7 +631,6 @@ st.divider()
 st.subheader(
     f"📋 Forecast Results - {selected_city}"
 )
-
 
 display_columns = [
     "City",
@@ -955,34 +927,19 @@ st.pyplot(fig3)
 
 
 # =====================================================
-# FOOTER / CREATORS
+# FINAL PROJECT CREDITS
 # =====================================================
 
 st.divider()
 
-st.markdown(
-    """
-    <div style="
-        text-align: center;
-        padding: 20px;
-        margin-top: 20px;
-    ">
+st.subheader("🌱 Project Team")
 
-        <h3>🌱 Project Developed By</h3>
+st.write("**G. Vatsyalya**")
+st.write("**G. Geetha Sri**")
+st.write("**L. Chandini**")
 
-        <p style="font-size: 17px;">
-            <b>G. Vatsyalya</b> &nbsp; • &nbsp;
-            <b>G. Geetha Sri</b> &nbsp; • &nbsp;
-            <b>L. Chandini</b>
-        </p>
-
-        <p>
-            AI-Based Geospatial Vegetation Forecasting
-        </p>
-
-    </div>
-    """,
-    unsafe_allow_html=True
+st.write(
+    "AI-Based Geospatial Vegetation Forecasting"
 )
 
 
@@ -993,4 +950,3 @@ st.markdown(
 st.success(
     "🌱 AI Vegetation Forecast completed successfully!"
 )
-
